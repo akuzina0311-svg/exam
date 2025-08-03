@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-6">
+            <i class="fas fa-tachometer-alt me-3"></i>
+            Dashboard Telegram-бота ИТМО AI
+        </h1>
+        <p class="lead text-muted">
+            Мониторинг активности бота для выбора магистерских программ ИИ
+        </p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    {% if stats.get('error') %}
+    <div class="col-12">
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            {{ stats.error }}
+        </div>
+    </div>
+    {% else %}
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-white-50">Всего разговоров</h6>
+                        <h3 class="text-white">{{ stats.total_conversations }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-comments fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-white-50">Пользователей</h6>
+                        <h3 class="text-white">{{ stats.total_users }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-white-50">Программ</h6>
+                        <h3 class="text-white">{{ stats.total_programs }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-graduation-cap fa-2x text-white-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title text-dark-50">Сегодня</h6>
+                        <h3 class="text-dark">{{ stats.today_conversations }}</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calendar-day fa-2x text-dark-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-lg-8 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Активность по дням
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="conversationsChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Бэкграунд пользователей
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="backgroundChart" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Programs Information -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-university me-2"></i>
+                    Информация о программах
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="programsInfo">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Conversations -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Последние разговоры
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if recent_conversations %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Пользователь</th>
+                                <th>Сообщение</th>
+                                <th>Ответ</th>
+                                <th>Время</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for conv in recent_conversations %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-user me-2"></i>
+                                    {{ conv.username or 'Анонимный' }}
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                                        {{ conv.message }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-truncate d-inline-block" style="max-width: 250px;">
+                                        {{ conv.response[:100] + '...' if conv.response and conv.response|length > 100 else conv.response }}
+                                    </span>
+                                </td>
+                                <td class="text-muted">
+                                    <small>{{ conv.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-comments fa-3x mb-3"></i>
+                    <p>Разговоров пока нет</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
